@@ -1,5 +1,39 @@
 apply plugin: 'com.android.library'
 
+ext {
+    app_ver = new ConfigSlurper().parse(new File("${projectDir}/versioning/version.groovy").toURL())
+    git_rev = generateGitRevision()
+    SUPPORT_LIBRARY_VERSION = '1.0.0'
+}
+
+def generateGitRevision() {
+    def git_rev = 'git rev-parse --verify --short HEAD'.execute().text.trim()
+    git_rev = (git_rev == null || git_rev == '') ? "" : git_rev
+}
+
+def generateVersionCode(major, minor, patch) {
+    if ((major > 99) || (major == 0) || (minor > 99) || (patch > 99)) {
+        throw new Exception("version number out of range")
+    }
+
+    major * 1000000 + minor * 10000 + patch * 100
+}
+
+def generateVersion(major, minor, patch) {
+    if ((major > 99) || (major == 0) || (minor > 99) || (patch > 99)) {
+        throw new Exception("version number out of range")
+    }
+    "${major}.${minor}.${patch}"
+}
+
+def generateVersionName(major, minor, patch, hash) {
+    def patchStr = patch == 0 ? "" : ("." + patch)
+    def hashStr = (hash == null || hash == '') ? "" : ("-$hash")
+    "${major}.${minor}${patchStr}${hashStr}"
+}
+
+String version = generateVersion(app_ver.major, app_ver.minor, app_ver.patch)
+
 android {
     compileSdkVersion 28
     defaultConfig {
@@ -20,6 +54,8 @@ android {
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation 'com.android.support:appcompat-v7:28.0.0'
+    implementation 'org.codehaus.groovy:groovy:2.4.1:grooid'
+
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'

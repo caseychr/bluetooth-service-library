@@ -4,6 +4,7 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.os.Bundle;
+import android.os.CountDownTimer;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
@@ -21,8 +22,12 @@ import java.util.UUID;
  */
 public class BluetoothService {
 
-    public static final String INDEFINITELY = "INDEFINITELY";
+    public static final String POLLING = "POLLING";
     public static final String FULFILL_INPUTS = "FULFILL_INPUTS";
+    public static final int FIVE_MINUTES = 10000;
+    public static final int INTERVAL = 1000;
+
+    public static boolean READ_ONCE = false;
 
     // Constants that indicate the current connection state
     public static final int STATE_NONE = 0;       // we're doing nothing
@@ -45,6 +50,8 @@ public class BluetoothService {
     private ConnectThread mConnectThread;
     private ConnectedThread mConnectedThread;
     private int mState;
+
+    private CountDownTimer mTimer;
 
     private static BluetoothService sBluetooth;
 
@@ -76,6 +83,29 @@ public class BluetoothService {
 
         // Give the new state to the Handler so the UI Activity can update
         mBTHandler.obtainMessage(BluetoothDeviceController.MESSAGE_STATE_CHANGE, state, -1).sendToTarget();
+    }
+
+    /**
+     * Set the polling timer to restart BT connection
+     *
+     * @param duration An integer defining the countown timer
+     * @param interval An integer defining the duration interval
+     * @return CountDownTimer returns CountdownTimer to be initiated after stopping BT connection
+     */
+    public CountDownTimer createCountdownTimer(int duration, int interval) {
+        mTimer = new CountDownTimer(duration, interval) {
+            @Override
+            public void onTick(long l) {
+
+            }
+
+            @Override
+            public void onFinish() {
+                Log.d(TAG, "polling timer finished. Start BT connection.");
+                connect();
+            }
+        };
+        return mTimer;
     }
 
     /**
@@ -174,6 +204,10 @@ public class BluetoothService {
         if (mConnectedThread != null) {
             mConnectedThread.cancel();
             mConnectedThread = null;
+        }
+
+        if(!READ_ONCE) {
+            mTimer.start();
         }
 
         setState(STATE_NONE);

@@ -16,7 +16,6 @@ public class BluetoothDeviceController {
     public static final int MESSAGE_DEVICE_NAME = 4;
     public static final int MESSAGE_TOAST = 5;
 
-    private static boolean fulfillAndStop = false;
 
     private static String mCoolantTemp;
     private static String mEngineRPM;
@@ -31,9 +30,11 @@ public class BluetoothDeviceController {
 
     public BluetoothDeviceController(String timeframe) {
         if(timeframe.equals(BluetoothService.FULFILL_INPUTS)){
-            fulfillAndStop = true;
-        } else {
-            //TODO DEV must implement ConnectedDeviceContoller.exit() into the UI where BluetoothService reading needs to STOP
+            BluetoothService.READ_ONCE = true;
+        } else if(timeframe.equals(BluetoothService.POLLING)){
+            //TODO DEV implement Counter
+            BluetoothService.getInstance()
+                    .createCountdownTimer(BluetoothService.FIVE_MINUTES, BluetoothService.INTERVAL);
         }
     }
 
@@ -87,7 +88,7 @@ public class BluetoothDeviceController {
     }
 
     private static void checkStop() {
-        if(fulfillAndStop){
+        if(BluetoothService.READ_ONCE){
             if(!mCoolantTemp.isEmpty() && !mEngineRPM.isEmpty() && !mVehicleSpeed.isEmpty() && !mAirFlow.isEmpty() && !mDistance.isEmpty()){
                 exit();
             }
