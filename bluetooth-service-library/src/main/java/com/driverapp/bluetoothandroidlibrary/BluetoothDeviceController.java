@@ -4,6 +4,7 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.os.Handler;
 import android.os.Message;
+import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,6 +28,8 @@ public class BluetoothDeviceController {
     static int coolantTemp;
     static int rpmval;
     static int intakeairtemp;
+
+    static BluetoothDeviceView sView;
 
     public BluetoothDeviceController(String timeframe) {
         if(timeframe.equals(BluetoothService.FULFILL_INPUTS)){
@@ -88,10 +91,8 @@ public class BluetoothDeviceController {
     }
 
     private static void checkStop() {
-        if(BluetoothService.READ_ONCE){
-            if(!mCoolantTemp.isEmpty() && !mEngineRPM.isEmpty() && !mVehicleSpeed.isEmpty() && !mAirFlow.isEmpty() && !mDistance.isEmpty()){
-                exit();
-            }
+        if(!mCoolantTemp.isEmpty() && !mEngineRPM.isEmpty() && !mVehicleSpeed.isEmpty() && !mAirFlow.isEmpty() && !mDistance.isEmpty()){
+            exit();
         }
     }
 
@@ -109,6 +110,7 @@ public class BluetoothDeviceController {
     public static void reportError(String message) {
         if (message != null){
             mErrorMessage = message;
+            sView.updateErrorMessage();
         }
     }
 
@@ -125,6 +127,7 @@ public class BluetoothDeviceController {
                 tempC = A - 40;
                 coolantTemp = tempC;
                 mCoolantTemp = coolantTemp+" C°";
+                sView.updateCoolant();
 
                 break;
 
@@ -135,6 +138,7 @@ public class BluetoothDeviceController {
                 intval = (int) val;
                 rpmval = intval;
                 mEngineRPM = String.valueOf(rpmval / 100);
+                sView.updateRPM();
 
                 break;
 
@@ -143,6 +147,7 @@ public class BluetoothDeviceController {
 
                 // A
                 mVehicleSpeed = String.valueOf(A);
+                sView.updateSpeed();
 
                 break;
 
@@ -160,6 +165,7 @@ public class BluetoothDeviceController {
                 val = ((256 * A) + B) / 100;
                 intval = (int) val;
                 mAirFlow = Integer.toString(intval)+" g/s";
+                sView.updateAirFlow();
 
                 break;
 
@@ -169,6 +175,7 @@ public class BluetoothDeviceController {
                 val = (A * 256) + B;
                 intval = (int) val;
                 mDistance = Integer.toString(intval)+" km";
+                sView.updateDistance();
 
                 break;
 
