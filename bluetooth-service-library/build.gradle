@@ -1,4 +1,5 @@
 apply plugin: 'com.android.library'
+apply plugin: 'maven'
 
 ext {
     app_ver = new ConfigSlurper().parse(new File("${projectDir}/versioning/version.groovy").toURL())
@@ -49,6 +50,9 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
+    testOptions {
+        unitTests.returnDefaultValues = true
+    }
 }
 
 dependencies {
@@ -56,7 +60,33 @@ dependencies {
     implementation 'com.android.support:appcompat-v7:28.0.0'
     implementation 'org.codehaus.groovy:groovy:2.4.1:grooid'
 
+    // Required -- JUnit 4 framework
     testImplementation 'junit:junit:4.12'
+    // Optional -- Robolectric environment
+    testImplementation 'androidx.test:core:1.0.0'
+    // Optional -- Mockito framework
+    testImplementation 'org.mockito:mockito-core:1.10.19'
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
+
+
+}
+
+configurations {
+    deployerJars
+}
+
+uploadArchives {
+    repositories.mavenDeployer {
+        configuration = configurations.deployerJars
+        repository(url: "$nexusUrl") {
+            authentication(userName: "$nexusUsername", password: "$nexusPassword")
+            pom.groupId = "com.routematch.android.modules"
+            pom.artifactId = "rm-bluetooth"
+            pom.version = version
+        }
+    }
+}
+repositories {
+    mavenCentral()
 }

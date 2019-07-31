@@ -66,9 +66,14 @@ public class PIDMessaging {
         }
     }
 
+    /**
+     * Get raw Message from Device
+     * @param message
+     */
     public static void retrieveMyMessage(Message message) {
         String tmpmsg = clearMsg(message);
 
+        // Check that the message has what we need to interpret correctly
         checkPids(tmpmsg);
 
         try {
@@ -79,7 +84,7 @@ public class PIDMessaging {
         sendDefaultCommands();
     }
 
-    private static String clearMsg(Message msg) {
+    public static String clearMsg(Message msg) {
         String tmpmsg = msg.obj.toString();
 
         tmpmsg = tmpmsg.replace("null", "");
@@ -111,6 +116,10 @@ public class PIDMessaging {
         }
     }
 
+    /**
+     * Strip and format the PIDS as needed to Calculate Correctly
+     * @param values
+     */
     private static void analyzePIDs(String values) {
         int A = 0;
         int B = 0;

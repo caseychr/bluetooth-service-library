@@ -4,7 +4,6 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.os.Handler;
 import android.os.Message;
-import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,7 +30,9 @@ public class BluetoothDeviceController {
 
     static BluetoothDeviceView sView;
 
-    public BluetoothDeviceController(String timeframe) {
+    public BluetoothDeviceController(String timeframe, BluetoothDevice device, BluetoothDeviceView view) {
+        sView = view;
+        BluetoothService.sBluetoothDevice = device;
         if(timeframe.equals(BluetoothService.FULFILL_INPUTS)){
             BluetoothService.READ_ONCE = true;
         } else if(timeframe.equals(BluetoothService.POLLING)){
@@ -76,7 +77,6 @@ public class BluetoothDeviceController {
                     reportError(null);
                     List<BluetoothDevice> deviceList = new ArrayList<>();
                     deviceList.addAll(BluetoothAdapter.getDefaultAdapter().getBondedDevices());
-                    BluetoothService.sBluetoothDevice = deviceList.get(0);
                     BluetoothService.getInstance().connect();
                 } else {
                     reportError("RMBluetoothError: There are no devices paired.");
@@ -90,6 +90,9 @@ public class BluetoothDeviceController {
 
     }
 
+    /**
+     * Check if we have received all necessary data and can stop writing to the device
+     */
     private static void checkStop() {
         if(!mCoolantTemp.isEmpty() && !mEngineRPM.isEmpty() && !mVehicleSpeed.isEmpty() && !mAirFlow.isEmpty() && !mDistance.isEmpty()){
             exit();
@@ -114,6 +117,13 @@ public class BluetoothDeviceController {
         }
     }
 
+    /**
+     * Takes from AnalyzePIDs and correctly calculates and formats data for consumption
+     * TODO: need a way to invoke update of variables without implementing view
+     * @param PID
+     * @param A
+     * @param B
+     */
     public static void calcValues(int PID, int A, int B) {
         double val = 0;
         int intval = 0;
@@ -121,7 +131,7 @@ public class BluetoothDeviceController {
 
         switch (PID) {
 
-            case 5://PID(05): Coolant Temperature
+            case 5://PIDS(05): Coolant Temperature
 
                 // A-40
                 tempC = A - 40;
@@ -131,7 +141,7 @@ public class BluetoothDeviceController {
 
                 break;
 
-            case 12: //PID(0C): RPM
+            case 12: //PIDS(0C): RPM
 
                 //((A*256)+B)/4
                 val = ((A * 256) + B) / 4;
@@ -143,7 +153,7 @@ public class BluetoothDeviceController {
                 break;
 
 
-            case 13://PID(0D): KM
+            case 13://PIDS(0D): KM
 
                 // A
                 mVehicleSpeed = String.valueOf(A);
@@ -151,7 +161,7 @@ public class BluetoothDeviceController {
 
                 break;
 
-            case 15://PID(0F): Intake Temperature
+            case 15://PIDS(0F): Intake Temperature
 
                 // A - 40
                 tempC = A - 40;
@@ -159,7 +169,7 @@ public class BluetoothDeviceController {
 
                 break;
 
-            case 16://PID(10): Maf
+            case 16://PIDS(10): Maf
 
                 // ((256*A)+B) / 100  [g/s]
                 val = ((256 * A) + B) / 100;
@@ -169,7 +179,7 @@ public class BluetoothDeviceController {
 
                 break;
 
-            case 49://PID(31)
+            case 49://PIDS(31)
 
                 //(256*A)+B km
                 val = (A * 256) + B;
@@ -198,7 +208,6 @@ public class BluetoothDeviceController {
                     }
                     break;
                 case MESSAGE_READ:
-                    //TODO this is the problem. Fix retrieveMyMessage(msg);
                     PIDMessaging.retrieveMyMessage(msg);
                     break;
             }
