@@ -1,4 +1,4 @@
-package com.driverapp.bluetoothandroidlibrary.Refactor;
+package com.driverapp.bluetoothandroidlibrary;
 
 import java.util.ArrayList;
 import java.util.List;

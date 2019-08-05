@@ -1,4 +1,4 @@
-package com.driverapp.bluetoothandroidlibrary.Refactor;
+package com.driverapp.bluetoothandroidlibrary;
 
 public interface MessageUpdate {
 

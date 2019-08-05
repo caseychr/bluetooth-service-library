@@ -20,12 +20,7 @@ import java.util.UUID;
  * incoming connections, a thread for connecting with a device, and a
  * thread for performing data transmissions when connected.
  */
-public class BluetoothService {
-
-    public static final String POLLING = "POLLING";
-    public static final String FULFILL_INPUTS = "FULFILL_INPUTS";
-    public static final int FIVE_MINUTES = 10000;
-    public static final int INTERVAL = 1000;
+public class BluetoothConnector {
 
     public static boolean READ_ONCE = false;
 
@@ -37,7 +32,7 @@ public class BluetoothService {
     //public static final UUID BluetoothSerialUuid = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
 
     // Debugging
-    private static final String TAG = "BluetoothService";
+    private static final String TAG = "BluetoothConnector";
     public static final String TOAST = "toast";
     public static final String DEVICE_NAME = "device_name";
     // Unique UUID for this application
@@ -46,18 +41,18 @@ public class BluetoothService {
     public static BluetoothDevice sBluetoothDevice;
 
     private final BluetoothAdapter mAdapter;
-    private final Handler mBTHandler;
-    private ConnectThread mConnectThread;
-    private ConnectedThread mConnectedThread;
+    public Handler mConnectionHandler;
+    ConnectThread mConnectThread;
+    ConnectedThread mConnectedThread;
     private int mState;
 
     private CountDownTimer mTimer;
 
-    private static BluetoothService sBluetooth;
+    private static BluetoothConnector sBluetooth;
 
-    public static BluetoothService getInstance() {
+    public static BluetoothConnector getInstance() {
         if(sBluetooth == null) {
-            sBluetooth = new BluetoothService();
+            sBluetooth = new BluetoothConnector();
         }
 
         return sBluetooth;
@@ -66,10 +61,9 @@ public class BluetoothService {
     /**
      * Constructor. Prepares a new BluetoothChat session.
      */
-    private BluetoothService() {
+    private BluetoothConnector() {
         mAdapter = BluetoothAdapter.getDefaultAdapter();
         mState = STATE_NONE;
-        mBTHandler = BluetoothDeviceController.mBtHandler;
     }
 
     /**
@@ -82,7 +76,7 @@ public class BluetoothService {
         mState = state;
 
         // Give the new state to the Handler so the UI Activity can update
-        mBTHandler.obtainMessage(BluetoothDeviceController.MESSAGE_STATE_CHANGE, state, -1).sendToTarget();
+        mConnectionHandler.obtainMessage(BluetoothController.MESSAGE_STATE_CHANGE, state, -1).sendToTarget();
     }
 
     /**
@@ -182,11 +176,12 @@ public class BluetoothService {
         mConnectedThread.start();
 
         // Send the name of the connected device back to the UI Activity
-        Message msg = mBTHandler.obtainMessage(BluetoothDeviceController.MESSAGE_DEVICE_NAME);
+        Message msg = mConnectionHandler.obtainMessage(
+                BluetoothController.MESSAGE_DEVICE_NAME);
         Bundle bundle = new Bundle();
         bundle.putString(DEVICE_NAME, sBluetoothDevice.getName());
         msg.setData(bundle);
-        mBTHandler.sendMessage(msg);
+        mConnectionHandler.sendMessage(msg);
 
         setState(STATE_CONNECTED);
     }
@@ -218,7 +213,7 @@ public class BluetoothService {
      * Write to the ConnectedThread in an unsynchronized manner
      *
      * @param out The bytes to write
-     * @see ConnectedThread#write(byte[])
+     * @see BluetoothConnector.ConnectedThread#write(byte[])
      */
     public void write(byte[] out) {
         // Create temporary object
@@ -237,15 +232,16 @@ public class BluetoothService {
      */
     private void connectionFailed() {
         // Send a failure message back to the Activity
-        Message msg = mBTHandler.obtainMessage(BluetoothDeviceController.MESSAGE_TOAST);
+        Message msg = mConnectionHandler.obtainMessage(
+                BluetoothController.MESSAGE_TOAST);
         Bundle bundle = new Bundle();
         bundle.putString(TOAST, "Unable to connect bt device");
         msg.setData(bundle);
-        mBTHandler.sendMessage(msg);
+        mConnectionHandler.sendMessage(msg);
         setState(STATE_NONE);
 
         // Start the service over to restart listening mode
-        BluetoothService.this.start();
+        BluetoothConnector.this.start();
     }
 
     /**
@@ -253,14 +249,15 @@ public class BluetoothService {
      */
     private void connectionLost() {
         // Send a failure message back to the Activity
-        Message msg = mBTHandler.obtainMessage(BluetoothDeviceController.MESSAGE_TOAST);
+        Message msg = mConnectionHandler.obtainMessage(
+                BluetoothController.MESSAGE_TOAST);
         Bundle bundle = new Bundle();
         bundle.putString(TOAST, "Bt device connection was lost");
         msg.setData(bundle);
-        mBTHandler.sendMessage(msg);
+        mConnectionHandler.sendMessage(msg);
 
         // Start the service over to restart listening mode
-        BluetoothService.this.start();
+        BluetoothConnector.this.start();
     }
 
     /**
@@ -312,7 +309,7 @@ public class BluetoothService {
             }
 
             // Reset the ConnectThread because we're done
-            synchronized (BluetoothService.this) {
+            synchronized (BluetoothConnector.this) {
                 mConnectThread = null;
             }
 
@@ -369,7 +366,8 @@ public class BluetoothService {
                         msg = msg + x;
                         //if (x == 0x3e) {
                         if (msg.contains(">")) {
-                            mBTHandler.obtainMessage(BluetoothDeviceController.MESSAGE_READ, buffer.length, -1, msg).sendToTarget();
+                            mConnectionHandler.obtainMessage(
+                                    BluetoothController.MESSAGE_READ, buffer.length, -1, msg).sendToTarget();
                             msg = "";
                         }
                     }
@@ -377,7 +375,7 @@ public class BluetoothService {
                 } catch (IOException e) {
                     connectionLost();
                     // Start the service over to restart listening mode
-                    BluetoothService.this.start();
+                    BluetoothConnector.this.start();
                     break;
                 }
             }
@@ -390,7 +388,7 @@ public class BluetoothService {
                 mmOutStream.write(arrayOfBytes);
                 mmOutStream.flush();
                 // Share the sent message back to the UI Activity
-                mBTHandler.obtainMessage(BluetoothDeviceController.MESSAGE_WRITE, -1, -1, buffer).sendToTarget();
+                mConnectionHandler.obtainMessage(BluetoothController.MESSAGE_WRITE, -1, -1, buffer).sendToTarget();
 
             } catch (IOException e) {
                 Log.e(TAG, "Exception during write", e);

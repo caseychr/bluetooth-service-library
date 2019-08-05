@@ -1,16 +1,23 @@
-package com.driverapp.bluetoothandroidlibrary.Refactor;
+package com.driverapp.bluetoothandroidlibrary;
 
 import android.os.Message;
+import android.util.Log;
 
 public class MessageReceptor {
+    private static final String TAG = "MessageReceptor";
 
     static MessageUpdate mUpdate;
+
+    public MessageReceptor(MessageUpdate messageUpdate) {
+        mUpdate = messageUpdate;
+    }
 
     /**
      * Get raw Message from Device
      * @param message
      */
     public static void retrieveMsg(Message message) {
+        Log.i(TAG, "retrieveMsg: "+message.toString());
         String tmpmsg = cleanMsg(message);
 
         // Check that the message has what we need to interpret correctly
@@ -21,8 +28,6 @@ public class MessageReceptor {
             parsePIDs(tmpmsg);
         } catch (Exception e) {
         }
-        //TODO gonna do this in the handler after READ STATE is set. Might not work.
-        //sendDefaultCommands();
     }
 
     public static String cleanMsg(Message msg) {
@@ -46,6 +51,7 @@ public class MessageReceptor {
 
     //TODO can we remove this?
     private static void checkPIDS(String tmpmsg) {
+        Log.i(TAG, "checkPIDS: "+tmpmsg);
         if (tmpmsg.indexOf("41") != -1) {
             int index = tmpmsg.indexOf("41");
 
@@ -59,10 +65,11 @@ public class MessageReceptor {
     }
 
     /**
-     * Strip and format the PIDS as needed to Calculate Correctly
+     * Strip and format the com.driverapp.bluetoothandroidlibrary.PIDS as needed to Calculate Correctly
      * @param values
      */
     private static void parsePIDs(String values) {
+        Log.i(TAG, "parsePIDs: "+values);
         int A = 0;
         int B = 0;
         int PID = 0;
@@ -88,19 +95,19 @@ public class MessageReceptor {
 
     /**
      * Takes from AnalyzePIDs and correctly calculates and formats data for consumption
-     * TODO: need to use Broadcast Receivers/Intents to update app
      * @param PID
      * @param A
      * @param B
      */
     public static void calcValues(int PID, int A, int B) {
+        Log.i(TAG, "calcValues: "+PID+", "+A+", "+B);
         double val = 0;
         int intval = 0;
         int tempC = 0;
 
         switch (PID) {
 
-            case 5://PIDS(05): Coolant Temperature
+            case 5://com.driverapp.bluetoothandroidlibrary.PIDS(05): Coolant Temperature
 
                 // A-40
                 tempC = A - 40;
@@ -109,7 +116,7 @@ public class MessageReceptor {
                 mUpdate.updateCoolantTemp(PIDS.getCoolantTemp());
                 break;
 
-            case 12: //PIDS(0C): RPM
+            case 12: //com.driverapp.bluetoothandroidlibrary.PIDS(0C): RPM
 
                 //((A*256)+B)/4
                 val = ((A * 256) + B) / 4;
@@ -121,7 +128,7 @@ public class MessageReceptor {
                 break;
 
 
-            case 13://PIDS(0D): KM
+            case 13://com.driverapp.bluetoothandroidlibrary.PIDS(0D): KM
 
                 // A
                 PIDS.setVehicleSpeed(A+" KMPH");
@@ -129,7 +136,7 @@ public class MessageReceptor {
 
                 break;
 
-            case 15://PIDS(0F): Intake Temperature
+            case 15://com.driverapp.bluetoothandroidlibrary.PIDS(0F): Intake Temperature
 
                 // A - 40
                 tempC = A - 40;
@@ -139,7 +146,7 @@ public class MessageReceptor {
 
                 break;
 
-            case 16://PIDS(10): Maf
+            case 16://com.driverapp.bluetoothandroidlibrary.PIDS(10): Maf
 
                 // ((256*A)+B) / 100  [g/s]
                 val = ((256 * A) + B) / 100;
@@ -149,7 +156,7 @@ public class MessageReceptor {
 
                 break;
 
-            case 49://PIDS(31)
+            case 49://com.driverapp.bluetoothandroidlibrary.PIDS(31)
 
                 //(256*A)+B km
                 val = (A * 256) + B;
@@ -161,8 +168,5 @@ public class MessageReceptor {
 
             default:
         }
-        //TODO Checking after seeing update
-        //checkStop();
     }
-
 }

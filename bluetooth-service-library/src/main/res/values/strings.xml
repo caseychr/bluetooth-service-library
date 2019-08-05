@@ -1,14 +1,3 @@
 <resources>
     <string name="app_name">BluetoothAndroidLibrary</string>
-
-    <string name="error_bt_not_supported">RMBluetoothError: this device is not setup for BluetoothService.</string>
-    <string name="error_bt_not_on">RMBluetoothError: BluetoothService is not turned on.</string>
-    <string name="error_bt_no_paired_devices">RMBluetoothError: There are no devices paired.</string>
-    
-    <string name="polling">POLLING</string>
-    <string name="initial_read">INITIAL_READ</string>
-
-    <integer name="five_minutes">300000</integer>
-    <integer name="ten_seconds">10000</integer>
-    <integer name="interval">1000</integer>
 </resources>
