@@ -2,6 +2,8 @@ package com.driverapp.bluetoothandroidlibrary;
 
 public interface MessageUpdate {
 
+    void updateBTConnected(boolean connected);
+
     void updateEngineRPM(String RPM);
 
     void updateVehicleSpeed(String speed);

@@ -34,6 +34,7 @@ public class BluetoothController {
 
     public BluetoothController(String timeframe, BluetoothDevice device, MessageUpdate messageUpdate) {
         Log.i(TAG, "Timeframe: "+timeframe+", Device: "+device.getName());
+        mMessageUpdate = messageUpdate;
         MessageReceptor.mUpdate = messageUpdate;
         mMessageInquirer = new MessageInquirer();
         mMessageReceptor = new MessageReceptor(messageUpdate);
@@ -62,6 +63,7 @@ public class BluetoothController {
                     reportError(null);
                     List<BluetoothDevice> deviceList = new ArrayList<>();
                     deviceList.addAll(BluetoothAdapter.getDefaultAdapter().getBondedDevices());
+                    mMessageUpdate.updateBTConnected(true);
                     BluetoothConnector.getInstance().connect();
                 } else {
                     reportError("RMBluetoothError: There are no devices paired.");
@@ -90,6 +92,7 @@ public class BluetoothController {
      * Closes BluetoothService socket
      */
     public static void exit() {
+        mMessageUpdate.updateBTConnected(false);
         BluetoothConnector.getInstance().stop();
     }
 
