@@ -22,11 +22,15 @@ public class BluetoothController {
     public static final int MESSAGE_READ = 2;
     public static final int MESSAGE_WRITE = 3;
     public static final int MESSAGE_DEVICE_NAME = 4;
-    public static final int MESSAGE_TOAST = 5;
+    public static final int MESSAGE_TOAST_LOST = 5;
+    public static final int MESSAGE_TOAST_UNABLE = 6;
+
 
     // Initialize send and receive classes for BT
     private MessageInquirer mMessageInquirer;
     private MessageReceptor mMessageReceptor;
+    private int checkStopInts = 0;
+    public static boolean STILL_RUNNING = false;
 
     Context mContext;
     static MessageUpdate mMessageUpdate;
@@ -41,9 +45,9 @@ public class BluetoothController {
         BluetoothConnector.sBluetoothDevice = device;
         BluetoothConnector.getInstance().mConnectionHandler = mHandler;
         if(timeframe.equals("INITIAL_READ")){
-            BluetoothConnector.READ_ONCE = true;
         } else if(timeframe.equals("POLLING")){
-            //TODO DEV implement Counter
+            Log.i(TAG, "in polling");
+            STILL_RUNNING = true;
             BluetoothConnector.getInstance()
                     .createCountdownTimer(
                             10000, 1000);
@@ -64,6 +68,7 @@ public class BluetoothController {
                     List<BluetoothDevice> deviceList = new ArrayList<>();
                     deviceList.addAll(BluetoothAdapter.getDefaultAdapter().getBondedDevices());
                     mMessageUpdate.updateBTConnected(true);
+                    Log.i(TAG, "try connect in init");
                     BluetoothConnector.getInstance().connect();
                 } else {
                     reportError("RMBluetoothError: There are no devices paired.");
@@ -84,7 +89,13 @@ public class BluetoothController {
         Log.i(TAG, "checkStop");
         if(PIDS.getDistance() != null && PIDS.getCoolantTemp() != null && PIDS.getEngineRPM() != null &&
                 PIDS.getAirFlow() != null && PIDS.getVehicleSpeed() != null) {
-            exit();
+            Log.i(TAG, String.valueOf(checkStopInts));
+            if(checkStopInts > 19) {
+                exit();
+                checkStopInts = 0;
+            } else {
+                checkStopInts++;
+            }
         }
     }
 
@@ -93,7 +104,7 @@ public class BluetoothController {
      */
     public static void exit() {
         mMessageUpdate.updateBTConnected(false);
-        BluetoothConnector.getInstance().stop();
+        BluetoothConnector.getInstance().stop(STILL_RUNNING);
     }
 
     /**
@@ -101,8 +112,9 @@ public class BluetoothController {
      * @param message
      */
     public static void reportError(String message) {
-        Log.i(TAG, "reportError: "+message);
         if (message != null){
+            Log.i(TAG, "reportError: "+message);
+            exit();
             PIDS.setErrorMessage(message);
             mMessageUpdate.updateErrorMessage(message);
         }
@@ -119,6 +131,7 @@ public class BluetoothController {
                 case MESSAGE_STATE_CHANGE:
                     switch (msg.arg1) {
                         case BluetoothConnector.STATE_CONNECTED:
+                            mMessageUpdate.updateBTConnected(true);
                             mMessageInquirer.initCommands();
                             break;
                     }
@@ -128,7 +141,11 @@ public class BluetoothController {
                     mMessageInquirer.resendInitCommands();
                     checkStop();
                     break;
+                case MESSAGE_TOAST_UNABLE:
+                    Log.i(TAG, "TIMEOUT sent to Handler");
+                    mMessageUpdate.updateErrorMessage("UnableToConnect");
             }
         }
     };
 }
+

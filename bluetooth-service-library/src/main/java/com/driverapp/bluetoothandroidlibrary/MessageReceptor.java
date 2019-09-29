@@ -70,6 +70,10 @@ public class MessageReceptor {
      */
     private static void parsePIDs(String values) {
         Log.i(TAG, "parsePIDs: "+values);
+        if(values.contains("UNABLETOCONNECT")) {
+            Log.i(TAG, "UNABLETOCONNECT");
+            BluetoothController.reportError("Unable to connect with Bluetooth Device");
+        }
         int A = 0;
         int B = 0;
         int PID = 0;
@@ -112,7 +116,7 @@ public class MessageReceptor {
                 // A-40
                 tempC = A - 40;
                 int coolantTemp = tempC;
-                PIDS.setCoolantTemp(coolantTemp+" C°");
+                PIDS.setCoolantTemp(coolantTemp+"");
                 mUpdate.updateCoolantTemp(PIDS.getCoolantTemp());
                 break;
 
@@ -131,7 +135,7 @@ public class MessageReceptor {
             case 13://com.driverapp.bluetoothandroidlibrary.PIDS(0D): KM
 
                 // A
-                PIDS.setVehicleSpeed(A+" KMPH");
+                PIDS.setVehicleSpeed(A+"");
                 mUpdate.updateVehicleSpeed(PIDS.getVehicleSpeed());
 
                 break;
@@ -141,7 +145,7 @@ public class MessageReceptor {
                 // A - 40
                 tempC = A - 40;
                 int intakeairtemp = tempC;
-                PIDS.setIntakeAirTemp(intakeairtemp+" C°");
+                PIDS.setIntakeAirTemp(intakeairtemp+"");
                 mUpdate.updateIntakeAirTemp(PIDS.getIntakeAirTemp());
 
                 break;
@@ -151,7 +155,7 @@ public class MessageReceptor {
                 // ((256*A)+B) / 100  [g/s]
                 val = ((256 * A) + B) / 100;
                 intval = (int) val;
-                PIDS.setAirFlow(intval+" G/S");
+                PIDS.setAirFlow(intval+"");
                 mUpdate.updateAirFlow(PIDS.getAirFlow());
 
                 break;
@@ -161,7 +165,7 @@ public class MessageReceptor {
                 //(256*A)+B km
                 val = (A * 256) + B;
                 intval = (int) val;
-                PIDS.setDistance(intval+" KM");
+                PIDS.setDistance(intval+"");
                 mUpdate.updateDistance(PIDS.getDistance());
 
                 break;

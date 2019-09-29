@@ -22,8 +22,6 @@ import java.util.UUID;
  */
 public class BluetoothConnector {
 
-    public static boolean READ_ONCE = false;
-
     // Constants that indicate the current connection state
     public static final int STATE_NONE = 0;       // we're doing nothing
     public static final int STATE_LISTEN = 1;     // now listening for incoming connections
@@ -71,7 +69,7 @@ public class BluetoothConnector {
      *
      * @param state An integer defining the current connection state
      */
-    private synchronized void setState(int state) {
+    public synchronized void setState(int state) {
         Log.d(TAG, "setState() " + mState + " -> " + state);
         mState = state;
 
@@ -96,7 +94,10 @@ public class BluetoothConnector {
             @Override
             public void onFinish() {
                 Log.d(TAG, "polling timer finished. Start BT connection.");
-                connect();
+                Log.i(TAG, "try connect in countdown timer finish");
+                while (mState != STATE_CONNECTING && mState != STATE_CONNECTED) {
+                    connect();
+                }
             }
         };
         return mTimer;
@@ -189,7 +190,7 @@ public class BluetoothConnector {
     /**
      * Stop all threads
      */
-    public synchronized void stop() {
+    public synchronized void stop(boolean stillPolling) {
         Log.d(TAG, "stop");
 
         if (mConnectThread != null) {
@@ -202,7 +203,7 @@ public class BluetoothConnector {
             mConnectedThread = null;
         }
 
-        if(!READ_ONCE) {
+        if(stillPolling) {
             mTimer.start();
         }
 
@@ -233,7 +234,7 @@ public class BluetoothConnector {
     private void connectionFailed() {
         // Send a failure message back to the Activity
         Message msg = mConnectionHandler.obtainMessage(
-                BluetoothController.MESSAGE_TOAST);
+                BluetoothController.MESSAGE_TOAST_UNABLE);
         Bundle bundle = new Bundle();
         bundle.putString(TOAST, "Unable to connect bt device");
         msg.setData(bundle);
@@ -250,7 +251,7 @@ public class BluetoothConnector {
     private void connectionLost() {
         // Send a failure message back to the Activity
         Message msg = mConnectionHandler.obtainMessage(
-                BluetoothController.MESSAGE_TOAST);
+                BluetoothController.MESSAGE_TOAST_LOST);
         Bundle bundle = new Bundle();
         bundle.putString(TOAST, "Bt device connection was lost");
         msg.setData(bundle);
@@ -298,6 +299,7 @@ public class BluetoothConnector {
                 mmSocket.connect();
             } catch (IOException e) {
                 // Close the socket
+                Log.i(TAG, "FAILED TO CONNECT TIMEOUT!!!****************");
                 try {
                     mmSocket.close();
                 } catch (IOException e2) {
